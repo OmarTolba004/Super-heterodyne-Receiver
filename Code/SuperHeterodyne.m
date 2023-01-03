@@ -18,7 +18,6 @@ clear; clc;
 % converting the two channels into monophopic
 audioSample1 = audioSample1(:,1)+audioSample1(:,2);
 audioSample2 = audioSample2(:,1)+audioSample2(:,2);
-
 figure;
 % Plotting audio samples 
 subplot(3,2,1)
@@ -77,7 +76,7 @@ sm1 = yc1.*audioSample1_';
 sm2 = yc2.*audioSample2_';
 
 % Analyzing in Freq. Spectrum for first audio singal
-sa0=dsp.SpectrumAnalyzer('SampleRate',samplingFrequency1*10);
+sa0=dsp.SpectrumAnalyzer('SampleRate',newSamplingFrequency);
 sa0.Name= 'First signal after modulation';
 %step(sa0,sm1');
 % using plot function for first signal
@@ -157,7 +156,7 @@ BandPassSpecObj2 = ...
 		F_stop1, F_pass1, F_pass2, F_stop2, A_stop1, A_pass, ...
 		A_stop2, newSamplingFrequency);
 BandPassFilt2 = design(BandPassSpecObj2);
-% fvtool(BandPassFilt2) % plot the filter magnitude response
+fvtool(BandPassFilt2) % plot the filter magnitude response
 
 %% RFBPF. Filtering First Singal 
 sm_filtered_1 = filter(BandPassFilt,sm_t');
@@ -297,6 +296,41 @@ subplot(2,1,2);
 Ysm2_demod_BB=fft(sm2_demod,N);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm2_demod_BB)));
 title('De-Modulating Second signal at Baseband'); xlabel('Frequecny in Hz');
+
+%% filtering Both Signals
+%  filter specifications
+Fp = 2.2e4;Fst = 2.5e4;
+% Designing LowPass Filter Fp =2.2e4, Fst = 2.5e4, Ap(amount of ripple allowed in the pass band)= 1,
+% And Ast(attenuation in the stop band) = 80.
+LowPassFilter = design(fdesign.lowpass('Fp,Fst,Ap,Ast',Fp,Fst,1,80,newSamplingFrequency));
+fvtool(LowPassFilter);
+% filtering first signal
+received1 = filter(LowPassFilter,sm1_BB);
+received2 = filter(LowPassFilter,sm2_demod);
+% Analyzing in Freq. Spectrum for Both Signals signal
+Yreceived1=fft(received1,N);
+Yreceived2=fft(received2,N);
+figure;
+% Plotting first singal
+subplot(2,1,1);
+plot(k*newSamplingFrequency/N,fftshift(abs(Yreceived1)));
+title('First Recieved Signal'); xlabel('Frequecny in Hz');
+% Plotting second singal
+subplot(2,1,2);
+plot(k*newSamplingFrequency/N,fftshift(abs(Yreceived2)));
+title('Second Recieved Signal'); xlabel('Frequecny in Hz');
+
+%% Down Sampling Both signals
+% Down Sampling first signal by factor 10
+firstSignal = downsample(received1,10);
+% This line need to be unCommented to play the first signal
+% sound(firstSignal,48000);
+% Down Sampling Second signal by factor 10
+secondSignal = downsample(received2,10);
+% This line need to be unCommented to play the second signal
+sound(secondSignal,48000);
+
+
 
 
 

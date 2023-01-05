@@ -15,7 +15,7 @@ clear; clc;
 % Reading the audio file and storing its data
 [audioSample1,samplingFrequency1] = audioread('Short_WRNArabic.wav');
 [audioSample2,samplingFrequency2] = audioread('Short_QuranPalestine.wav');
-% converting the two channels into monophopic
+% Converting the two channels into monophonic
 audioSample1 = audioSample1(:,1)+audioSample1(:,2);
 audioSample2 = audioSample2(:,1)+audioSample2(:,2);
 figure;
@@ -113,7 +113,7 @@ sa2.Name= 'Channel with the two modulated signal';
 Ysm_t=fft(sm_t,N);
 figure;
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm_t)));
-title('Channel with the two modulated signal'); xlabel('Frequecny in Hz');
+title('Spectrum output of the transmitter'); xlabel('Frequecny in Hz');
 
 %% RF BandBass Filter design for first signal 
 % important note : first signal BW = 22 kHz and modulated with 100kHz
@@ -178,30 +178,32 @@ title('Filtering Second Singal at RF'); xlabel('Frequecny in Hz');
 
 %% DeModulatoion-stage -> first signal
 % Intermediate freq. value
-Fif = 2.5e4;
+Fif = 2.5e4; freqShift = 0;
 % Carrier for demodulating first signal
-yc1_if = cos(2*pi*(Fif+fc1)*t);
+yc1_if = cos(2*pi*(Fif+fc1+freqShift)*t);
 % De-Modulation for first Signal
 sm1_IFDemod = yc1_if.*sm1_filtered_RFBPF';
+% sm1_IFDemod = yc1_if.*sm_t; %this line to simulate removing RFBPF
 % Analyzing in Freq. Spectrum for first demodulated signal
 figure;
 subplot(2,1,1);
 Ysm1_IFDemod=fft(sm1_IFDemod,N);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm1_IFDemod)));
-title('De-Modulating first signal to If stage'); xlabel('Frequecny in Hz');
+title('Output of the mixer (First Signal)'); xlabel('Frequecny in Hz');
 
 %% DeModulatoion-stage -> second signal
 % Intermediate freq. value
 Fif = 2.5e4;
 % Carrier for demodulating second signal
-yc2_if = cos(2*pi*(Fif+fc2)*t);
+yc2_if = cos(2*pi*(Fif+fc2+freqShift)*t);
 % De-Modulation for second Signal
 sm2_IFDemod = yc2_if.*sm2_filtered_RFBPF';
+%  sm2_IFDemod = yc2_if.*sm_t; %this line to simulate removing RFBPF
 % Analyzing in Freq. Spectrum for first demodulated signal
 subplot(2,1,2);
 Ysm2_IFDemod=fft(sm2_IFDemod,N);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm2_IFDemod)),'-r');
-title('De-Modulating Second signal to If stage'); xlabel('Frequecny in Hz');
+title('Output of the mixer (Second Signal)'); xlabel('Frequecny in Hz');
 
 %% IF Stage. IF BandBass Filter design for first signal 
 % important note : first signal BW = 22 kHz and Carried at Fif= 25kHz
@@ -234,7 +236,7 @@ Ysm1_IF_filtered=fft(sm1_IF_filtered,N);
 figure;
 subplot(2,1,1);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm1_IF_filtered)));
-title('Filtering First Singal at IF stage'); xlabel('Frequecny in Hz');
+title('Output of the IF filter (First Signal)'); xlabel('Frequecny in Hz');
 
 %% IFBPF. Filtering Second Singal 
 sm2_IF_filtered = filter(BandPassFilt3,sm2_IFDemod');
@@ -246,7 +248,7 @@ sa6.Name= 'Filtering Second Singal at IF stage';
 Ysm2_IF_filtered=fft(sm2_IF_filtered,N);
 subplot(2,1,2);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm2_IF_filtered)),'-r');
-title('Filtering Second Singal at IF stage'); xlabel('Frequecny in Hz');
+title('Output of the IF filter (Second Signal)'); xlabel('Frequecny in Hz');
 
 %% Baseband detection-stage -> first signal
 % Carrier for demodulating first signal
@@ -258,7 +260,7 @@ figure;
 subplot(2,1,1);
 Ysm1_demod_BB=fft(sm1_BB,N);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm1_demod_BB)));
-title('De-Modulating first signal to Baseband stage'); xlabel('Frequecny in Hz');
+title(' Output of the mixer (First signal before the LPF)'); xlabel('Frequecny in Hz');
 
 
 %% Baseband detection-stage -> second signal
@@ -272,7 +274,7 @@ sm2_demod = yc2_BB.*sm2_IF_filtered';
 subplot(2,1,2);
 Ysm2_demod_BB=fft(sm2_demod,N);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm2_demod_BB)),'-r');
-title('De-Modulating Second signal to Baseband stage'); xlabel('Frequecny in Hz');
+title(' Output of the mixer (Second signal before the LPF)'); xlabel('Frequecny in Hz');
 
 %% filtering Both Signals
 %  filter specifications
@@ -291,18 +293,18 @@ figure;
 % Plotting first singal
 subplot(2,1,1);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm1_received)));
-title('First Recieved Signal at Base Band'); xlabel('Frequecny in Hz');
+title('Output of the LPF (First Recieved Signal at Base Band)'); xlabel('Frequecny in Hz');
 % Plotting second singal
 subplot(2,1,2);
 plot(k*newSamplingFrequency/N,fftshift(abs(Ysm2_received)),'-r');
-title('Second Recieved Signal at Base Band'); xlabel('Frequecny in Hz');
+title('Output of the LPF (Second Recieved Signal at Base Band)'); xlabel('Frequecny in Hz');
 
 %% Down Sampling Both signals
 % Down Sampling first signal by factor 10
 firstSignal = downsample(sm1_recieved,10);
 % This line need to be unCommented to play the first signal
-% sound(firstSignal,48000);
+sound(firstSignal,48000);
 % Down Sampling Second signal by factor 10
 secondSignal = downsample(sm2_recieved,10);
 % This line need to be unCommented to play the second signal
-sound(secondSignal,48000);
+%sound(secondSignal,48000);
